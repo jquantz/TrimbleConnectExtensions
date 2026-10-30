@@ -11,6 +11,7 @@
   <div id="mock-viewer" hidden></div>
 
   <main id="panel">
+    <div id="demo-banner" class="demo-banner" hidden>Demo mode: a fake 2-storey timber frame. Nothing is sent to Trimble Connect.</div>
     <header class="hdr">
       <div class="hdr-row">
         <div>
@@ -59,12 +60,13 @@
         <button id="rec-clear" class="btn sm danger">Clear all</button>
       </div>
 
+      <p class="help small-gap">Drag <b>⋮⋮</b> to move an object (or all selected rows), or drag the <b>step number</b> to move the whole step. Drop on the top or bottom edge of a row to insert before or after it, or on the middle to join that step.</p>
       <div class="list-head">
         <input id="list-filter" placeholder="Filter by ID, mark or name…" />
       </div>
       <div class="table-wrap">
         <table id="seq-table">
-          <thead><tr><th>#</th><th>Sequence ID</th><th>Mark</th><th>Name</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Step</th><th>Sequence ID</th><th>Mark</th><th>Name</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -78,6 +80,7 @@
         <input type="file" id="csv-file" accept=".csv,.txt,.tsv" hidden />
         <span id="csv-label">Drop a CSV here or <u>browse</u></span>
       </label>
+      <button id="csv-sample" class="btn sm" hidden>Load the sample schedule</button>
 
       <div id="csv-map" hidden>
         <div class="grid2">
@@ -140,6 +143,28 @@
       <label class="chk"><input type="checkbox" id="play-zoom" /> Zoom to each step</label>
       <div id="phase-legend" class="legend"></div>
       <button id="play-reset" class="btn">Reset 3D view</button>
+
+      <hr />
+      <h3>Export video</h3>
+      <p class="help">Records the build-up from the current 3D view, using the playback options above. Set up the camera first, then leave the 3D view alone while it records.</p>
+      <div class="grid2">
+        <label>Resolution<select id="vid-res">
+          <option value="1280x720" selected>720p (1280 × 720)</option>
+          <option value="1920x1080">1080p (1920 × 1080)</option>
+        </select></label>
+        <label>Time per step<select id="vid-step">
+          <option value="0.5">0.5 s</option>
+          <option value="1" selected>1 s</option>
+          <option value="2">2 s</option>
+          <option value="3">3 s</option>
+        </select></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="vid-caption" checked /> Show step ID, phase, date and progress on the video</label>
+      <button id="vid-export" class="btn primary">Export MP4</button>
+      <div id="vid-progress" hidden>
+        <div class="progress"><div></div></div>
+        <div class="row"><span id="vid-status" class="muted small">Preparing…</span><button id="vid-cancel" class="btn sm">Cancel</button></div>
+      </div>
     </section>
 
     <!-- ============ WRITE ============ -->
@@ -198,6 +223,38 @@
       <p class="muted small">Sequence work is auto-saved in this browser per project. Write to property sets to share it with the team.</p>
     </section>
 
+    <div id="confirm" class="modal" hidden>
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <div id="confirm-title" class="modal-title"></div>
+        <div id="confirm-detail" class="muted small"></div>
+        <div class="row" style="justify-content:flex-end;margin-top:12px">
+          <button id="confirm-cancel" class="btn">Cancel</button>
+          <button id="confirm-ok" class="btn primary">OK</button>
+        </div>
+      </div>
+    </div>
+    <div id="export-modal" class="modal" hidden>
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <div class="modal-title">Sequence CSV</div>
+        <div class="muted small">Downloads are blocked on this demo page. Copy the text and paste it into a .csv file or Excel.</div>
+        <textarea id="export-text" rows="9" readonly style="width:100%;margin-top:8px"></textarea>
+        <div class="row" style="justify-content:flex-end;margin-top:10px">
+          <button id="export-close" class="btn">Close</button>
+          <button id="export-copy" class="btn primary">Copy</button>
+        </div>
+      </div>
+    </div>
+    <div id="video-modal" class="modal" hidden>
+      <div class="modal-box wide" role="dialog" aria-modal="true">
+        <div class="modal-title">Sequence video ready</div>
+        <video id="video-preview" controls playsinline></video>
+        <div id="video-info" class="muted small"></div>
+        <div class="row" style="justify-content:flex-end;margin-top:10px">
+          <button id="video-close" class="btn">Close</button>
+          <button id="video-download" class="btn primary">Download</button>
+        </div>
+      </div>
+    </div>
     <div id="toast" role="status"></div>
   </main>
 </div>

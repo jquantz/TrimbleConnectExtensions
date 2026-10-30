@@ -60,6 +60,11 @@ After you write, select an object and open its Properties panel. The *Constructi
 - Click objects in the 3D view in erection order. Each click becomes the next step.
 - To put several objects in one step (for example a whole bay of joists or a multi-piece lift), Ctrl-click or box-select them together. You can also tick **Hold step** and click them one by one, then press **Next step ›**.
 - If you click an object that already has a sequence, it is skipped. Tick **Re-sequence** if you want to move it.
+- **Re-order by dragging** in the list:
+  - Drag the **⋮⋮** grip (mouse, pen or touch) to move one object. If several rows are selected, they all move together.
+  - Drag the **step number** to move the whole step.
+  - Drop on the **top or bottom edge** of a row to make a new step before or after it, or on the **middle** of a row to join that step.
+  - Click-recorded steps are renumbered automatically, so IDs always follow the order. IDs that came from a CSV, or that you typed yourself, are kept. A piece split off one of those steps gets a suffix, for example `L1-COL-01-2`.
 - **Undo last step**, **Remove selected**, **Renumber** (closes gaps) and inline editing of any ID in the list are all available.
 
 ### Phase 2: fine-tune from a CSV schedule
@@ -80,6 +85,12 @@ After you write, select an object and open its Properties panel. The *Constructi
 
 ### Play
 Use ▶ to play, step with ◀ and ▶|, or drag the slider. You can choose the speed, whether future steps are hidden or ghosted, how unsequenced objects look, and whether finished steps are coloured by phase.
+
+### Export a video
+- In the **Play** tab, set the playback options and position the camera in the 3D view, then choose a resolution (720p or 1080p) and a time per step, and press **Export MP4**.
+- The extension steps through the sequence, captures the 3D view at every step, and makes an H.264 MP4. A caption band can show the Sequence ID, phase, date and progress. The video starts with a 1 s intro and holds the last step for 2 s.
+- Leave the 3D view alone while it records. A preview opens when it's done, and the file downloads straight away. If your browser blocks the download inside Connect, right-click the preview and choose **Save Video As**.
+- You need a current Chrome, Edge or Firefox. On older browsers it falls back to a WebM file.
 
 ### Write and share
 - **Write changes** pushes only the objects you edited (shown with ● in the list). **Write selected** and **Rewrite all** are also available. Writes go in batches of 500.
@@ -102,10 +113,13 @@ manifest.json        Extension manifest (edit the URLs)
 index.html           Panel UI
 css/app.css
 js/app.js            UI and workflow
+js/video.js          MP4 export (WebCodecs + vendored mp4-muxer, MIT)
+js/vendor/           mp4-muxer library
 js/tc.js             Workspace API wrapper (selection, properties, colour/visibility)
 js/pset.js           Property Set + Organizer REST client
 js/seqcore.js        Pure logic: GUID conversion, CSV, matching, steps (unit-tested)
 js/mock.js           Local demo viewer (only loads with ?mock or outside Connect)
+tools/build_demo.py  Bundles a single-file demo page into dist/demo.html
 samples/schedule_template.csv
 tests/seqcore.test.mjs   Run with: npm test
 ```

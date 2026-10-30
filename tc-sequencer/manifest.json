@@ -4,7 +4,8 @@
   "url": "https://jquantz.github.io/TrimbleConnectExtensions/tc-sequencer/index.html",
   "icon": "https://jquantz.github.io/TrimbleConnectExtensions/tc-sequencer/icon.png",
   "infoUrl": "https://jquantz.github.io/TrimbleConnectExtensions/tc-sequencer/README.md",
-  "extensionType": ["3dviewer"],
+  "extensionType": [
+    "3dviewer"
+  ],
   "enabled": true
 }
-
