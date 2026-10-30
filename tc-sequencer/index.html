@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Construction Sequencer</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<div id="layout">
+  <div id="mock-viewer" hidden></div>
+
+  <main id="panel">
+    <header class="hdr">
+      <div class="hdr-row">
+        <div>
+          <h1>Construction Sequencer</h1>
+          <div id="project-name" class="muted">Connecting to Trimble Connect…</div>
+        </div>
+        <span id="conn-dot" class="dot" title="Connection"></span>
+      </div>
+      <div class="chips">
+        <span class="chip"><b id="stat-objects">0</b> objects</span>
+        <span class="chip"><b id="stat-steps">0</b> steps</span>
+        <span class="chip warn" id="chip-unsaved" hidden><b id="stat-unsaved">0</b> not written</span>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="record" class="active">1 · Record</button>
+      <button role="tab" data-tab="schedule">2 · Schedule</button>
+      <button role="tab" data-tab="play">Play</button>
+      <button role="tab" data-tab="write">Write</button>
+      <button role="tab" data-tab="settings" title="Settings">⚙</button>
+    </nav>
+
+    <!-- ============ RECORD (phase 1: click order) ============ -->
+    <section class="tab-body" data-tab="record">
+      <p class="help">Turn on recording, then click objects in the 3D view in erection order. Each click becomes the next step. Ctrl/box-select several objects to put them in one step.</p>
+      <div class="grid2">
+        <label>Phase / prefix<input id="rec-phase" value="P1" /></label>
+        <label>ID format<input id="rec-template" value="{phase}-{n:3}" title="{phase} = prefix, {n:3} = step number padded to 3 digits" /></label>
+        <label>Next step #<input id="rec-next" type="number" min="1" value="1" /></label>
+        <label>Preview<input id="rec-preview" disabled /></label>
+      </div>
+      <button id="rec-toggle" class="btn primary big">● Start recording</button>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="rec-hold" /> Hold step — keep adding clicks to the same step</label>
+        <button id="rec-nextstep" class="btn sm" disabled>Next step ›</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="rec-reseq" /> Re-sequence objects that already have an ID</label>
+
+      <div id="inspector" class="card" hidden></div>
+
+      <div class="row wrap">
+        <button id="rec-undo" class="btn sm">↶ Undo last step</button>
+        <button id="rec-remove" class="btn sm">Remove selected</button>
+        <button id="rec-renumber" class="btn sm" title="Close gaps: renumber click-recorded steps 1..N">Renumber</button>
+        <button id="rec-clear" class="btn sm danger">Clear all</button>
+      </div>
+
+      <div class="list-head">
+        <input id="list-filter" placeholder="Filter by ID, mark or name…" />
+      </div>
+      <div class="table-wrap">
+        <table id="seq-table">
+          <thead><tr><th>#</th><th>Sequence ID</th><th>Mark</th><th>Name</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="list-more" class="muted small"></div>
+    </section>
+
+    <!-- ============ SCHEDULE (phase 2: CSV fine-tune) ============ -->
+    <section class="tab-body" data-tab="schedule" hidden>
+      <p class="help">Load your erection schedule (CSV). Rows are matched to model objects by <b>GUID</b> first, then by <b>Mark</b>.</p>
+      <label class="drop" id="csv-drop">
+        <input type="file" id="csv-file" accept=".csv,.txt,.tsv" hidden />
+        <span id="csv-label">Drop a CSV here or <u>browse</u></span>
+      </label>
+
+      <div id="csv-map" hidden>
+        <div class="grid2">
+          <label>GUID column<select data-col="guid"></select></label>
+          <label>Mark column<select data-col="mark"></select></label>
+          <label>Sequence ID column *<select data-col="seqId"></select></label>
+          <label>Order / step # column<select data-col="order"></select></label>
+          <label>Phase column<select data-col="phase"></select></label>
+          <label>Planned date column<select data-col="date"></select></label>
+        </div>
+        <fieldset class="radios">
+          <legend>Apply to</legend>
+          <label class="chk"><input type="radio" name="csv-scope" value="sequence" checked /> Objects already in my sequence</label>
+          <label class="chk"><input type="radio" name="csv-scope" value="model" /> Every matching object in the loaded models</label>
+        </fieldset>
+        <button id="csv-match" class="btn primary">Match schedule to model</button>
+        <div id="csv-report" class="card" hidden></div>
+        <button id="csv-apply" class="btn primary" hidden>Apply sequence IDs</button>
+        <hr />
+        <label class="chk"><input type="checkbox" id="auto-assign" /> <b>Auto-assign on select</b> — selecting an object in the 3D view looks it up in this schedule and assigns its sequence</label>
+        <div id="auto-card" class="card" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============ PLAY ============ -->
+    <section class="tab-body" data-tab="play" hidden>
+      <div class="play-now">
+        <div id="play-label" class="play-id">—</div>
+        <div id="play-sub" class="muted small">No steps yet</div>
+      </div>
+      <input type="range" id="play-slider" min="0" max="0" value="0" />
+      <div class="transport">
+        <button class="btn" id="play-first" title="First">⏮</button>
+        <button class="btn" id="play-prev" title="Previous">◀</button>
+        <button class="btn primary" id="play-toggle" title="Play / pause">▶</button>
+        <button class="btn" id="play-next" title="Next">▶|</button>
+        <button class="btn" id="play-last" title="Show all">⏭</button>
+      </div>
+      <div class="grid2">
+        <label>Speed<select id="play-speed">
+          <option value="250">Fast (0.25 s)</option>
+          <option value="600" selected>Normal (0.6 s)</option>
+          <option value="1200">Slow (1.2 s)</option>
+          <option value="2500">Very slow (2.5 s)</option>
+        </select></label>
+        <label>Future steps<select id="play-future">
+          <option value="hidden">Hidden</option>
+          <option value="ghost">Ghosted</option>
+        </select></label>
+        <label>Unsequenced objects<select id="play-unseq">
+          <option value="ghost">Ghosted</option>
+          <option value="hidden">Hidden</option>
+          <option value="normal">Unchanged</option>
+        </select></label>
+        <label>Built objects<select id="play-built">
+          <option value="phase">Colour by phase</option>
+          <option value="original">Original colour</option>
+        </select></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="play-zoom" /> Zoom to each step</label>
+      <div id="phase-legend" class="legend"></div>
+      <button id="play-reset" class="btn">Reset 3D view</button>
+    </section>
+
+    <!-- ============ WRITE ============ -->
+    <section class="tab-body" data-tab="write" hidden>
+      <p class="help">Writes each object's Sequence ID into a Trimble Connect <b>property set</b> on the model object. Create the property set library + definition in Connect first (see README).</p>
+      <button id="ps-connect" class="btn primary">Connect to property sets</button>
+      <div id="ps-config" hidden>
+        <div class="grid2">
+          <label>Library<select id="ps-lib"></select></label>
+          <label>Property set<select id="ps-def"></select></label>
+          <label>Sequence ID field *<select data-field="seqId"></select></label>
+          <label>Step # field<select data-field="order"></select></label>
+          <label>Phase field<select data-field="phase"></select></label>
+          <label>Date field<select data-field="date"></select></label>
+        </div>
+        <label>Object link format
+          <div class="row"><input id="ps-link" value="frn:entity:{guid}" /><button id="ps-detect" class="btn sm" title="Learn the format from an object you already tagged in Connect">Detect</button></div>
+        </label>
+        <div class="row wrap">
+          <button id="ps-write-dirty" class="btn primary">Write changes (<span id="ps-dirty-n">0</span>)</button>
+          <button id="ps-write-sel" class="btn">Write selected</button>
+          <button id="ps-write-all" class="btn">Rewrite all</button>
+        </div>
+        <button id="ps-load" class="btn">Load sequence from property set</button>
+      </div>
+      <div id="ps-progress" class="progress" hidden><div></div></div>
+      <div id="ps-log" class="log"></div>
+      <hr />
+      <h3>Export</h3>
+      <p class="help">CSV with GUID, Mark, Sequence ID and step — edit it in Excel and load it back in the Schedule tab, or import into Tekla / Revit as a native parameter.</p>
+      <button id="export-csv" class="btn">Download sequence CSV</button>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="tab-body" data-tab="settings" hidden>
+      <label>Mark property (first match wins; <code>Set.Property</code> or <code>Property</code>)
+        <textarea id="set-mark" rows="6"></textarea>
+      </label>
+      <label>Name property
+        <textarea id="set-name" rows="3"></textarea>
+      </label>
+      <button id="set-pick" class="btn sm">Show properties of selected object</button>
+      <div id="prop-picker" class="picker" hidden></div>
+      <div class="grid2">
+        <label>Service region<select id="set-region">
+          <option value="auto">Auto (from project)</option>
+          <option value="us-east-1">North America</option>
+          <option value="eu-west-1">Europe</option>
+          <option value="eu-west-2">Europe (UK)</option>
+          <option value="ap-southeast-1">Asia</option>
+          <option value="ap-southeast-2">Australia</option>
+        </select></label>
+        <label>Highlight colour<input type="color" id="set-hl" value="#ff7a00" /></label>
+      </div>
+      <button id="set-save" class="btn primary">Save settings</button>
+      <p class="muted small">Sequence work is auto-saved in this browser per project. Write to property sets to share it with the team.</p>
+    </section>
+
+    <div id="toast" role="status"></div>
+  </main>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

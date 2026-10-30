@@ -1,0 +1,9 @@
+{
+  "title": "Construction Sequencer",
+  "description": "Record an erection sequence by clicking objects, fine-tune it from a CSV schedule (GUID / Mark), write the Sequence ID to a property set and animate the build.",
+  "url": "https://YOUR-HOST/tc-sequencer/index.html",
+  "icon": "https://YOUR-HOST/tc-sequencer/icon.png",
+  "infoUrl": "https://YOUR-HOST/tc-sequencer/README.md",
+  "extensionType": ["3dviewer"],
+  "enabled": true
+}
